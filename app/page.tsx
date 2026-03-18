@@ -1,0 +1,300 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+
+export default function HomePage() {
+  const [text, setText] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
+  const [result, setResult] = useState("");
+  const [explanation, setExplanation] = useState(""); 
+  const [isCopied, setIsCopied] = useState(false);
+  
+  const [history, setHistory] = useState<Array<{original: string, formatted: string, explanation: string, date: string}>>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('apa-history');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  const handleCheck = async () => {
+    if (!text.trim()) {
+      setResult("⚠️ กรุณาวางข้อความบรรณานุกรมที่ต้องการตรวจสอบก่อนครับ");
+      return;
+    }
+
+    setIsChecking(true);
+    setResult("");
+    setExplanation("");
+    setIsCopied(false);
+
+    try {
+      const response = await fetch('/api/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: text }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'เกิดข้อผิดพลาดบางอย่าง');
+      }
+
+      let finalResult = data.result;
+      let finalExplanation = "";
+      
+      if (data.result.includes('|||')) {
+        const parts = data.result.split('|||');
+        finalResult = parts[0].trim().replace(/\n+/g, '\n\n');
+        finalExplanation = parts[1].trim();
+      } else {
+        finalResult = finalResult.trim().replace(/\n+/g, '\n\n');
+      }
+
+      setResult(finalResult);
+      setExplanation(finalExplanation);
+
+      const newHistoryItem = { 
+        original: text, 
+        formatted: finalResult, 
+        explanation: finalExplanation,
+        date: new Date().toLocaleString('th-TH') 
+      };
+      
+      const updatedHistory = [newHistoryItem, ...history].slice(0, 10);
+      setHistory(updatedHistory);
+      localStorage.setItem('apa-history', JSON.stringify(updatedHistory));
+
+    } catch (error: any) {
+      console.error(error);
+      setResult(`⚠️ ${error.message}`);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleClear = () => {
+    setText("");
+    setResult("");
+    setExplanation("");
+    setIsCopied(false);
+  };
+
+  const handleCopyText = () => {
+    const resultElement = document.getElementById("formatted-result");
+    if (resultElement) {
+      const range = document.createRange();
+      range.selectNodeContents(resultElement);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      
+      document.execCommand('copy');
+      
+      selection?.removeAllRanges();
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000); 
+    }
+  };
+
+  const clearHistory = () => {
+    if(confirm('คุณแน่ใจหรือไม่ว่าต้องการลบประวัติการแก้ไขทั้งหมด?')) {
+      setHistory([]);
+      localStorage.removeItem('apa-history');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDF9EC] text-gray-800 font-sans pb-12">
+      <nav className="bg-white shadow-md border-b border-amber-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            
+            <div className="flex-shrink-0 flex items-center">
+              <span className="font-bold text-lg md:text-xl tracking-tight bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">
+                JETC : Journal of Educational Technology & Communications
+              </span>
+            </div>
+
+            <button 
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-black hover:text-gray-600 font-medium flex items-center transition-colors"
+            >
+              🕒 ประวัติการแก้ไข {history.length > 0 && `(${history.length})`}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        {showHistory && (
+          <div className="bg-white border border-amber-200 rounded-xl p-6 mb-8 shadow-inner animate-fade-in-up">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-amber-900">ประวัติการตรวจสอบล่าสุด</h2>
+              {history.length > 0 && (
+                <button onClick={clearHistory} className="text-red-500 hover:text-red-700 text-sm font-semibold">
+                  🗑️ ล้างประวัติทั้งหมด
+                </button>
+              )}
+            </div>
+            
+            {history.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">ยังไม่มีประวัติการแก้ไข</p>
+            ) : (
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                {history.map((item, index) => (
+                  <div key={index} className="bg-white p-5 rounded-lg border border-amber-200 shadow-sm text-sm">
+                    <div className="text-xs text-amber-600 mb-3">{item.date}</div>
+                    <div className="mb-3">
+                      <strong>🔴 ต้นฉบับ:</strong> 
+                      <span className="text-gray-600 ml-2 line-clamp-2">{item.original}</span>
+                    </div>
+                    <div className="mb-3">
+                      <strong>🟢 ผลลัพธ์:</strong> 
+                      <div className="inline-block text-gray-800 font-serif ml-2">
+                        <ReactMarkdown>{item.formatted}</ReactMarkdown>
+                      </div>
+                    </div>
+                    
+                    {item.explanation && (
+                      <div className="mt-3 pt-3 border-t border-amber-100 bg-amber-50 rounded p-3">
+                        <strong className="text-amber-900 flex items-center mb-2">
+                          <span className="mr-1">💡</span> สิ่งที่ AI แก้ไข:
+                        </strong>
+                        <div className="text-gray-700 ml-6 space-y-1">
+                          <ReactMarkdown 
+                            components={{
+                              ul: ({node, ...props}) => <ul className="list-disc" {...props} />,
+                              li: ({node, ...props}) => <li className="mb-1" {...props} />
+                            }}
+                          >
+                            {item.explanation}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-amber-900 mb-3">
+            ระบบตรวจสอบและแก้ไขบรรณานุกรม APA 7th Edition
+          </h1>
+          <p className="text-amber-800 text-lg max-w-2xl mx-auto">
+            วางข้อความของคุณ ระบบจะจัดรูปแบบให้ถูกต้อง พร้อมสรุปจุดที่แก้ไข
+          </p>
+        </div>
+
+        <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-amber-100">
+          
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="w-full h-48 p-4 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none resize-y text-base text-gray-800 bg-white"
+            placeholder="วางข้อความบรรณานุกรมที่นี่ (สามารถวางได้หลายรายการ)..."
+          ></textarea>
+
+          <div className="mt-6 flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <button 
+              onClick={handleCheck}
+              disabled={isChecking}
+              className={`text-white px-8 py-3 rounded-lg font-bold text-lg transition duration-200 shadow-md flex items-center justify-center
+                ${isChecking ? 'bg-amber-500 cursor-not-allowed' : 'bg-amber-800 hover:bg-amber-900'}`}
+            >
+              {isChecking ? 'กำลังวิเคราะห์และจัดรูปแบบ...' : '✨ จัดรูปแบบ APA 7'}
+            </button>
+            <button 
+              onClick={handleClear}
+              className="bg-white text-amber-800 border border-amber-300 px-8 py-3 rounded-lg font-bold text-lg hover:bg-amber-50 transition duration-200"
+            >
+              ล้างข้อความ
+            </button>
+          </div>
+
+          {result && !result.includes('⚠️') && (
+            <div className="mt-10 animate-fade-in-up">
+              
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-bold text-gray-700">ผลลัพธ์พร้อมใช้งาน:</h3>
+                <button 
+                  onClick={handleCopyText}
+                  className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors flex items-center shadow-sm
+                    ${isCopied ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-white text-amber-800 border border-amber-300 hover:bg-amber-50'}`}
+                >
+                  {isCopied ? '✅ คัดลอกแล้ว' : '📋 คัดลอกไปวางใน Word'}
+                </button>
+              </div>
+              
+              <div 
+                id="formatted-result"
+                className="bg-white p-6 rounded-lg border border-amber-200 shadow-inner text-lg leading-relaxed text-black font-serif mb-6"
+              >
+                <ReactMarkdown
+                  components={{
+                    p: ({node, ...props}) => (
+                      <p 
+                        style={{ 
+                          marginLeft: '36pt',
+                          textIndent: '-36pt',
+                          marginBottom: '12pt',
+                          lineHeight: '1.5'
+                        }} 
+                        {...props} 
+                      />
+                    )
+                  }}
+                >
+                  {result}
+                </ReactMarkdown>
+              </div>
+
+              {explanation && (
+                <div className="mb-6 p-5 bg-amber-50 border border-amber-200 rounded-lg shadow-sm">
+                  <h4 className="text-md font-bold text-amber-900 mb-3 flex items-center">
+                    <span className="text-xl mr-2">💡</span> สรุปสิ่งที่ AI ทำการแก้ไข:
+                  </h4>
+                  <div className="text-amber-900 font-sans ml-7 space-y-1">
+                    <ReactMarkdown 
+                      components={{
+                        ul: ({node, ...props}) => <ul className="list-disc" {...props} />,
+                        li: ({node, ...props}) => <li className="mb-1" {...props} />
+                      }}
+                    >
+                      {explanation}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 flex items-start p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                <span className="text-xl mr-2 text-amber-600">⚠️</span>
+                <p>
+                  <strong>หมายเหตุ:</strong> ระบบนี้ใช้ AI ในการช่วยจัดรูปแบบ กรุณาตรวจสอบความถูกต้องของข้อมูลและตัวสะกดตาม <strong>"คู่มือการทำวิทยานิพนธ์ของมหาวิทยาลัย"</strong> อีกครั้งก่อนนำไปใช้งานจริง
+                </p>
+              </div>
+
+            </div>
+          )}
+
+          {result && result.includes('⚠️') && (
+            <div className="mt-8 p-6 rounded-lg border bg-red-50 border-red-200 text-red-800">
+              {result}
+            </div>
+          )}
+
+        </div>
+      </main>
+    </div>
+  );
+}
