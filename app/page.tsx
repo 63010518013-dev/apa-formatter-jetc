@@ -12,6 +12,9 @@ export default function HomePage() {
   
   const [history, setHistory] = useState<Array<{original: string, formatted: string, explanation: string, date: string}>>([]);
   const [showHistory, setShowHistory] = useState(false);
+  
+  // 💡 เพิ่ม State สำหรับเปิด-ปิด หน้าต่างคู่มือวิธีใช้งาน
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('apa-history');
@@ -122,15 +125,64 @@ export default function HomePage() {
               </span>
             </div>
 
-            <button 
-              onClick={() => setShowHistory(!showHistory)}
-              className="text-black hover:text-gray-600 font-medium flex items-center transition-colors"
-            >
-              🕒 ประวัติการแก้ไข {history.length > 0 && `(${history.length})`}
-            </button>
+            {/* 💡 เพิ่มปุ่ม คู่มือวิธีใช้งาน ตรงนี้ */}
+            <div className="flex items-center space-x-4 sm:space-x-6">
+              <button 
+                onClick={() => setShowHelp(true)}
+                className="text-amber-700 hover:text-amber-900 font-bold flex items-center transition-colors text-sm sm:text-base"
+              >
+                📖 วิธีใช้งาน
+              </button>
+              <button 
+                onClick={() => setShowHistory(!showHistory)}
+                className="text-black hover:text-gray-600 font-medium flex items-center transition-colors text-sm sm:text-base"
+              >
+                🕒 ประวัติ {history.length > 0 && `(${history.length})`}
+              </button>
+            </div>
+            
           </div>
         </div>
       </nav>
+
+      {/* 💡 หน้าต่าง Popup (Modal) สำหรับคู่มือวิธีใช้งาน */}
+      {showHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 animate-fade-in-up relative max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowHelp(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold text-amber-900 mb-6 border-b pb-3 flex items-center">
+              <span className="mr-2">📖</span> คู่มือการใช้งานระบบ
+            </h2>
+            <div className="space-y-4 text-gray-700 leading-relaxed">
+              <p><strong>1. วางข้อมูลบรรณานุกรม:</strong> คัดลอกรายการบรรณานุกรมที่คุณมี (ทั้งภาษาไทยและอังกฤษรวมกันได้) มาวางในกล่องข้อความ</p>
+              <p><strong>2. กดปุ่มจัดรูปแบบ:</strong> คลิกปุ่ม <span className="text-amber-800 font-bold">"✨ จัดรูปแบบ APA 7"</span> แล้วรอระบบ AI ประมวลผลและตรวจสอบความถูกต้องประมาณ 30 วินาที - 1 นาที</p>
+              <p><strong>3. ตรวจสอบผลลัพธ์:</strong> ระบบจะจัดกลุ่มภาษาไทยขึ้นก่อนภาษาอังกฤษ จัดเรียงตามลำดับตัวอักษร และทำตัวเอียงให้อัตโนมัติตามหลักการ APA 7th Edition</p>
+              <p><strong>4. คัดลอกไปใช้งาน:</strong> กดปุ่ม <span className="bg-amber-50 text-amber-800 border border-amber-300 px-2 py-1 rounded text-sm font-bold">📋 คัดลอกไปวางใน Word</span> เพื่อนำไปใช้ต่อได้ทันที (ระบบตั้งค่าการย่อหน้าบรรทัดที่สองไว้ให้เบื้องต้นแล้ว)</p>
+              
+              <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                <p className="text-amber-800 font-bold mb-1">💡 คำแนะนำเพิ่มเติม:</p>
+                <ul className="list-disc ml-5 space-y-1 text-amber-900">
+                  <li>หากวางข้อมูลหลายรายการ แนะนำให้เว้นบรรทัดให้ชัดเจน เพื่อให้ AI แยกแยะได้แม่นยำที่สุด</li>
+                  <li>ผู้ใช้ควรตรวจสอบตัวสะกดและเทียบกับ <strong>"คู่มือการทำวิทยานิพนธ์ของมหาวิทยาลัย"</strong> อีกครั้งก่อนนำไปตีพิมพ์จริง</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-8 text-center">
+              <button 
+                onClick={() => setShowHelp(false)}
+                className="bg-amber-800 text-white px-8 py-2 rounded-lg font-bold hover:bg-amber-900 transition-colors"
+              >
+                เข้าใจแล้ว เริ่มใช้งานเลย!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
@@ -205,21 +257,31 @@ export default function HomePage() {
             placeholder="วางข้อความบรรณานุกรมที่นี่ (สามารถวางได้หลายรายการ)..."
           ></textarea>
 
-          <div className="mt-6 flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <button 
-              onClick={handleCheck}
-              disabled={isChecking}
-              className={`text-white px-8 py-3 rounded-lg font-bold text-lg transition duration-200 shadow-md flex items-center justify-center
-                ${isChecking ? 'bg-amber-500 cursor-not-allowed' : 'bg-amber-800 hover:bg-amber-900'}`}
-            >
-              {isChecking ? 'กำลังวิเคราะห์และจัดรูปแบบ...' : '✨ จัดรูปแบบ APA 7'}
-            </button>
-            <button 
-              onClick={handleClear}
-              className="bg-white text-amber-800 border border-amber-300 px-8 py-3 rounded-lg font-bold text-lg hover:bg-amber-50 transition duration-200"
-            >
-              ล้างข้อความ
-            </button>
+          <div className="mt-6 flex flex-col items-center space-y-3">
+            <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 w-full">
+              <button 
+                onClick={handleCheck}
+                disabled={isChecking}
+                className={`text-white px-8 py-3 rounded-lg font-bold text-lg transition duration-200 shadow-md flex items-center justify-center
+                  ${isChecking ? 'bg-amber-500 cursor-not-allowed' : 'bg-amber-800 hover:bg-amber-900'}`}
+              >
+                {isChecking ? '⏳ กำลังประมวลผลและตรวจสอบซ้ำ...' : '✨ จัดรูปแบบ APA 7'}
+              </button>
+              <button 
+                onClick={handleClear}
+                disabled={isChecking}
+                className={`bg-white text-amber-800 border border-amber-300 px-8 py-3 rounded-lg font-bold text-lg transition duration-200
+                  ${isChecking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-50'}`}
+              >
+                ล้างข้อความ
+              </button>
+            </div>
+            
+            {isChecking && (
+              <p className="text-amber-600 text-sm font-medium animate-pulse mt-2 text-center">
+                ⚠️ ระบบกำลังจัดรูปแบบและตรวจสอบความถูกต้องซ้ำ กรุณารอประมาณ 30 วินาที - 1 นาทีครับ...
+              </p>
+            )}
           </div>
 
           {result && !result.includes('⚠️') && (
