@@ -113,7 +113,6 @@ export default function HomePage() {
   };
 
   return (
-    // เปลี่ยนพื้นหลังเป็นสีไข่ไก่อ่อนๆ (Hex: #FAF8F1)
     <div className="min-h-screen bg-[#FAF8F1] text-gray-800 font-sans pb-12">
       <nav className="bg-white shadow-sm border-b border-[#EBE3D5] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,7 +157,7 @@ export default function HomePage() {
             </h2>
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p><strong>1. วางข้อมูลบรรณานุกรม:</strong> คัดลอกรายการบรรณานุกรมที่คุณมี (ทั้งภาษาไทยและอังกฤษรวมกันได้) มาวางในกล่องข้อความ</p>
-              <p><strong>2. กดปุ่มจัดรูปแบบ:</strong> คลิกปุ่ม <span className="text-amber-800 font-bold">"✨ จัดรูปแบบ APA 7"</span> แล้วรอระบบ AI ประมวลผลและตรวจสอบความถูกต้องประมาณ 30 วินาที - 1 นาที</p>
+              <p><strong>2. กดปุ่มจัดรูปแบบ:</strong> คลิกปุ่ม <span className="text-amber-800 font-bold">"✨ คลิกตรวจข้อมูล"</span> แล้วรอระบบ AI ประมวลผลและตรวจสอบความถูกต้องประมาณ 30 วินาที - 1 นาที</p>
               <p><strong>3. ตรวจสอบผลลัพธ์:</strong> ระบบจะจัดกลุ่มภาษาไทยขึ้นก่อนภาษาอังกฤษ จัดเรียงตามลำดับตัวอักษร และทำตัวเอียงให้อัตโนมัติตามหลักการ APA 7th Edition</p>
               <p><strong>4. คัดลอกไปใช้งาน:</strong> กดปุ่ม <span className="bg-[#FAF8F1] text-amber-900 border border-[#EBE3D5] px-2 py-1 rounded text-sm font-bold">📋 คัดลอกไปวางใน Word</span> เพื่อนำไปใช้ต่อได้ทันที (ระบบตั้งค่าการย่อหน้าบรรทัดที่สองไว้ให้เบื้องต้นแล้ว)</p>
               
@@ -239,10 +238,10 @@ export default function HomePage() {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-extrabold text-amber-900 mb-3">
-            ระบบตรวจสอบและแก้ไขบรรณานุกรม APA 7th Edition
+            ระบบตรวจสอบรายการอ้างอิง
           </h1>
           <p className="text-amber-800 text-lg max-w-2xl mx-auto">
-            วางข้อความของคุณ ระบบจะจัดรูปแบบให้ถูกต้อง พร้อมสรุปจุดที่แก้ไข
+            ระบบตรวจสอบรายการอ้างอิง
           </p>
         </div>
 
@@ -263,7 +262,7 @@ export default function HomePage() {
                 className={`text-white px-8 py-3 rounded-lg font-bold text-lg transition duration-200 shadow-sm flex items-center justify-center
                   ${isChecking ? 'bg-amber-600 cursor-not-allowed' : 'bg-amber-800 hover:bg-amber-900'}`}
               >
-                {isChecking ? '⏳ กำลังประมวลผลและตรวจสอบซ้ำ...' : '✨ จัดรูปแบบ APA 7'}
+                {isChecking ? '⏳ กำลังประมวลผลและตรวจสอบซ้ำ...' : '✨ คลิกตรวจข้อมูล'}
               </button>
               <button 
                 onClick={handleClear}
@@ -282,7 +281,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {result && !result.includes('⚠️') && (
+          {result && !result.startsWith('⚠️') && (
             <div className="mt-10 animate-fade-in-up">
               
               <div className="flex justify-between items-center mb-3">
@@ -347,7 +346,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {result && result.includes('⚠️') && (
+          {result && result.startsWith('⚠️') && (
             <div className="mt-8 p-6 rounded-lg border bg-red-50 border-red-200 text-red-800">
               {result}
             </div>
