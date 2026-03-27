@@ -241,7 +241,7 @@ export default function HomePage() {
             ระบบตรวจสอบรายการอ้างอิง
           </h1>
           <p className="text-amber-800 text-lg max-w-2xl mx-auto">
-            ระบบตรวจสอบรายการอ้างอิง
+            ให้คัดลอกรายการอ้างอิงทั้งหมดในบทความ มาวางลงในกล่องข้อความ
           </p>
         </div>
 
