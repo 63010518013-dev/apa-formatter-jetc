@@ -75,11 +75,18 @@ export default function HomePage() {
 
     } catch (error: any) {
       console.error(error);
-      setResult(`⚠️ ${error.message}`);
+      const errorMessage = error.message || "";
+      
+      // ดักจับ Error 503 หรือ High demand
+      if (errorMessage.includes('503') || errorMessage.includes('high demand') || errorMessage.includes('Overloaded') || errorMessage.includes('fetch')) {
+        setResult("⚠️ โอ๊ะ! ดูเหมือนว่าจะมีผู้ใช้งานและรายการอ้างอิงจำนวนมาก จิบกาแฟซักเดี๋ยว รอประมาณ 1 นาทีและกด 'คลิกตรวจข้อมูล' ใหม่อีกครั้งนะครับ☕😎");
+      } else {
+        setResult(`⚠️ เกิดข้อผิดพลาด: ${error.message}`);
+      }
     } finally {
       setIsChecking(false);
     }
-  };
+  }; // <--- ตรงนี้แหละครับที่เติมเข้ามาให้แล้ว!
 
   const handleClear = () => {
     setText("");
@@ -347,7 +354,7 @@ export default function HomePage() {
           )}
 
           {result && result.startsWith('⚠️') && (
-            <div className="mt-8 p-6 rounded-lg border bg-red-50 border-red-200 text-red-800">
+            <div className="mt-8 p-6 rounded-lg border bg-red-50 border-red-200 text-red-800 flex items-center justify-center">
               {result}
             </div>
           )}
